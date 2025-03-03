@@ -11,7 +11,6 @@ import style from "./Profile.module.css";
 import { SiGmail } from "react-icons/si";
 import { FaPhoneAlt } from "react-icons/fa";
 import { FaAddressBook } from "react-icons/fa6";
-import { TextInput } from "@mantine/core";
 import { MdWork } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { RiUserFollowFill } from "react-icons/ri";
@@ -28,6 +27,122 @@ import { deleteJobFindingPost } from "../../api/JobSeeker";
 import { updateJobSeekerUsername } from "../../api/JobSeeker";
 import { updateJobSeekerPassword } from "../../api/JobSeeker";
 import { AxiosError } from "axios";
+import { useForm, UseFormReturnType } from "@mantine/form";
+
+import {
+  TextInput,
+  Title,
+  Grid,
+  Stack,
+  Select,
+  Switch,
+  Checkbox,
+} from "@mantine/core";
+
+interface InputProps {
+  label: string;
+  placeholder: string;
+  inputProps: ReturnType<UseFormReturnType<any>["getInputProps"]>;
+  size: "short" | "medium" | "long";
+  required?: boolean
+}
+
+// Interface สำหรับ Select Props
+interface SelectProps {
+  monthProp: ReturnType<UseFormReturnType<any>["getInputProps"]>;
+  yearProp: ReturnType<UseFormReturnType<any>["getInputProps"]>;
+  disabled?: boolean;
+}
+
+const jobCategories = [
+  { value: "it", label: "เทคโนโลยีสารสนเทศ (IT)" },
+  { value: "finance", label: "การเงินและการธนาคาร" },
+  { value: "marketing", label: "การตลาด" },
+  { value: "engineering", label: "วิศวกรรม" },
+  { value: "healthcare", label: "สุขภาพและการแพทย์" },
+  { value: "education", label: "การศึกษา" },
+  { value: "design", label: "ออกแบบและครีเอทีฟ" },
+  { value: "hr", label: "ทรัพยากรบุคคล (HR)" },
+  { value: "sales", label: "ฝ่ายขาย" },
+  { value: "logistics", label: "โลจิสติกส์และซัพพลายเชน" },
+];
+
+// ข้อมูลสายงานย่อย (ขึ้นอยู่กับประเภทงานที่เลือก)
+const subCategories = {
+  it: [
+    { value: "software_engineer", label: "วิศวกรซอฟต์แวร์" },
+    { value: "data_scientist", label: "นักวิทยาศาสตร์ข้อมูล" },
+    { value: "network_engineer", label: "วิศวกรเครือข่าย" },
+    { value: "cybersecurity", label: "ความปลอดภัยทางไซเบอร์" },
+    { value: "web_developer", label: "นักพัฒนเว็บ" },
+  ],
+  finance: [
+    { value: "accountant", label: "นักบัญชี" },
+    { value: "financial_analyst", label: "นักวิเคราะห์การเงิน" },
+    { value: "investment_banker", label: "นักการธนาคารการลงทุน" },
+    { value: "auditor", label: "ผู้ตรวจสอบบัญชี" },
+    { value: "tax_consultant", label: "ที่ปรึกษาด้านภาษี" },
+  ],
+  marketing: [
+    { value: "digital_marketing", label: "การตลาดดิจิทัล" },
+    { value: "brand_manager", label: "ผู้จัดการแบรนด์" },
+    { value: "content_marketing", label: "การตลาดเนื้อหา" },
+    { value: "social_media_manager", label: "ผู้จัดการโซเชียลมีเดีย" },
+    { value: "seo_specialist", label: "ผู้เชี่ยวชาญ SEO" },
+  ],
+  engineering: [
+    { value: "civil_engineer", label: "วิศวกรโยธา" },
+    { value: "mechanical_engineer", label: "วิศวกรเครื่องกล" },
+    { value: "electrical_engineer", label: "วิศวกรไฟฟ้า" },
+    { value: "chemical_engineer", label: "วิศวกรเคมี" },
+    { value: "aerospace_engineer", label: "วิศวกรอากาศยาน" },
+  ],
+  healthcare: [
+    { value: "doctor", label: "แพทย์" },
+    { value: "nurse", label: "พยาบาล" },
+    { value: "pharmacist", label: "เภสัชกร" },
+    { value: "physiotherapist", label: "นักกายภาพบำบัด" },
+    { value: "medical_researcher", label: "นักวิจัยทางการแพทย์" },
+  ],
+  education: [
+    { value: "teacher", label: "ครู" },
+    { value: "professor", label: "อาจารย์มหาวิทยาลัย" },
+    { value: "education_consultant", label: "ที่ปรึกษาด้านการศึกษา" },
+    { value: "curriculum_designer", label: "ผู้ออกแบบหลักสูตร" },
+    { value: "tutor", label: "ติวเตอร์" },
+  ],
+  design: [
+    { value: "graphic_designer", label: "นักออกแบบกราฟิก" },
+    { value: "ui_ux_designer", label: "นักออกแบบ UI/UX" },
+    { value: "interior_designer", label: "นักออกแบบภายใน" },
+    { value: "fashion_designer", label: "นักออกแบบแฟชั่น" },
+    { value: "motion_designer", label: "นักออกแบบโมชั่นกราฟิก" },
+  ],
+  hr: [
+    { value: "recruiter", label: "นักสรรหาบุคลากร" },
+    { value: "hr_manager", label: "ผู้จัดการฝ่ายทรัพยากรบุคคล" },
+    { value: "training_specialist", label: "ผู้เชี่ยวชาญฝึกอบรม" },
+    { value: "compensation_analyst", label: "นักวิเคราะห์ค่าตอบแทน" },
+    { value: "hr_consultant", label: "ที่ปรึกษาทรัพยากรบุคคล" },
+  ],
+  sales: [
+    { value: "sales_executive", label: "พนักงานฝ่ายขาย" },
+    { value: "account_manager", label: "ผู้จัดการบัญชี" },
+    { value: "business_development", label: "พัฒนาธุรกิจ" },
+    { value: "sales_engineer", label: "วิศวกรฝ่ายขาย" },
+    { value: "retail_sales", label: "ฝ่ายขายปลีก" },
+  ],
+  logistics: [
+    { value: "supply_chain_manager", label: "ผู้จัดการซัพพลายเชน" },
+    { value: "logistics_coordinator", label: "ผู้ประสานงานโลจิสติกส์" },
+    { value: "warehouse_manager", label: "ผู้จัดการคลังสินค้า" },
+    { value: "transportation_manager", label: "ผู้จัดการการขนส่ง" },
+    { value: "procurement_specialist", label: "ผู้เชี่ยวชาญจัดซื้อ" },
+  ],
+};
+
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: 20 }, (_, i) => (currentYear - i).toString()); 
 
 function Profile() {
   const navigate = useNavigate();
@@ -36,6 +151,36 @@ function Profile() {
     toast.error(message, { position: "top-center" });
   const notifySuccess = (message: string) =>
     toast.success(message, { position: "top-center" });
+
+  const form = useForm({
+    initialValues: {
+      username: "",
+      firstName: "",
+      lastName: "",
+      location: "",
+      aboutMe: "",
+      email: "",
+      contact: "",
+      jobTitle: "",
+      company: "",
+      startMonth: "",
+      startYear: "",
+      endMonth: "",
+      endYear: "",
+      currentlyWorking: false,
+      categorieWork: "",
+      subCategorieWork: "",
+    },
+
+    validate: {
+      startMonth: (value) => (value ? null : "Please select a start month"),
+      startYear: (value) => (value ? null : "Please select an end month"),
+      endMonth: (value, values) => values.currentlyWorking ? null : value ? null : "Please select a end month",
+      endYear: (value, values) => values.currentlyWorking ? null : value ? null : "Please select a end year",
+      categorieWork: (value) => (value ? null : "Please select a job category"),
+      subCategorieWork: (value) => (value ? null : "Please select a subcategory"),
+    },
+  });
 
   const {
     user,
@@ -81,24 +226,27 @@ function Profile() {
     editProfileOpened,
     { toggle: editProfileToggle, close: editProfileClose },
   ] = useDisclosure(false);
-  const [firstNameValue, setFirstNameValue] = useState<string>("");
-  const [lastNameValue, setLastNameValue] = useState<string>("");
-  const [aboutMeValue, setAboutMeValue] = useState<string>("");
-  const [addressValue, setAddressValue] = useState<string>("");
-  const [emailValue, setEmailValue] = useState<string>("");
-  const [phoneNumberValue, setPhoneNumberValue] = useState<string>("");
-  const [firstNameError, setFirstNameError] = useState<string>("");
-  const [lastNameError, setLastNameError] = useState<string>("");
-  const [aboutMeError, setAboutMeError] = useState<string>("");
-  const [addressError, setAddressError] = useState<string>("");
+  const [
+    confirmPasswordOpened,
+    { toggle: confirmPasswordToggle, close: confirmPasswordClose },
+  ] = useDisclosure(false);
+  // const [firstNameValue, setFirstNameValue] = useState<string>("");
+  // const [lastNameValue, setLastNameValue] = useState<string>("");
+  // const [aboutMeValue, setAboutMeValue] = useState<string>("");
+  // const [addressValue, setAddressValue] = useState<string>("");
+  // const [emailValue, setEmailValue] = useState<string>("");
+  // const [phoneNumberValue, setPhoneNumberValue] = useState<string>("");
   const [userPosts, setUserPosts] = useState<any[]>([]);
-  const [userNameValue, setuserNameValue] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [confirmpassword, setConfirmPassword] = useState<string>("");
+  // const [userNameValue, setuserNameValue] = useState<string>("");
+  // const [password, setPassword] = useState<string>("");
+  // const [confirmpassword, setConfirmPassword] = useState<string>("");
+  const [hasExperience, setHasExperience] = useState<boolean>(true);
+  const [hasDesiredJobCategory, setHasDesiredJobCategory] = useState<boolean>(true);
 
-  const [newPassword, setNewPassword] = useState<string>("");
-  const [password2, setPassword2] = useState<string>("");
-  const [confirmpassword2, setConfirmPassword2] = useState<string>("");
+  // const [newPassword, setNewPassword] = useState<string>("");
+  // const [password2, setPassword2] = useState<string>("");
+  const [confirmPassword2, setConfirmPassword2] = useState<string>("");
+  const [confirmPassword2Error, setConfirmPassword2Error] = useState<string>("");
 
   useEffect(() => {
     const fetchUserPost = async () => {
@@ -109,128 +257,211 @@ function Profile() {
     };
     fetchUserPost();
 
-    setFirstNameValue(user.firstName);
-    setLastNameValue(user.lastName);
-    setAboutMeValue(user.aboutMe);
-    setAddressValue(user.address);
-    setEmailValue(user.email);
-    setuserNameValue(user.username);
-    setPhoneNumberValue(user.contact);
+    setHasExperience(true)
+    setHasDesiredJobCategory(true)
 
-    setFirstNameError("");
-    setLastNameError("");
-    setAboutMeError("");
-    setAddressError("");
+    form.setValues({
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      location: user.address,
+      aboutMe: user.aboutMe,
+      email: user.email,
+      contact: user.contact,
+      jobTitle: "",
+      company: "",
+      startMonth: "",
+      startYear: "",
+      endMonth: "",
+      endYear: "",
+      currentlyWorking: false,
+      categorieWork: "",
+      subCategorieWork: "",
+    })
+
   }, [editProfileOpened]);
 
   const validateEditData = () => {
-    let isValidateFirstName = true;
-    let isValidateLastName = true;
-    let isValidateAddress = true;
-    let isValidateEmail = true;
-    let isValidatePhoneNumber = true;
-
-    setFirstNameError("");
-    setLastNameError("");
-    setAboutMeError("");
-    setAddressError("");
+    // username validation
+    if (form.values.username == "") {
+      notifyError("Please enter your username");
+      return false
+    }
 
     // first name validation
-    if (firstNameValue == "") {
-      isValidateFirstName = false;
-      setFirstNameError("Please enter your first name");
+    if (form.values.firstName == "") {
       notifyError("Please enter your first name");
+      return false
     }
 
     // last name validation
-    if (lastNameValue == "") {
-      isValidateLastName = false;
-      setLastNameError("Please enter your last name");
+    if (form.values.lastName == "") {
       notifyError("Please enter your last name");
+      return false
     }
 
     // address validation
-    if (addressValue == "") {
-      isValidateAddress = false;
-      setAddressError("Please enter your address");
+    if (form.values.location == "") {
       notifyError("Please enter your address");
+      return false
     }
 
-    return (
-      isValidateFirstName &&
-      isValidateLastName &&
-      isValidateAddress &&
-      isValidateEmail &&
-      isValidatePhoneNumber
-    );
+    // about me validation
+    if (form.values.aboutMe == "") {
+      notifyError("Please enter your about me");
+      return false
+    }
+
+    // email validation
+    if (form.values.email == "") {
+      notifyError("Please enter your email");
+      return false
+    }
+
+    // contact validation
+    if (form.values.contact == "") {
+      notifyError("Please enter your contact");
+      return false
+    }
+
+    // experience validation
+    if (hasExperience) { 
+      if (form.values.jobTitle == "") {
+        notifyError("Please enter your job title");
+        return false
+      }
+
+      if (form.values.company == "") {
+        notifyError("Please enter your company");
+        return false
+      }
+
+      if (form.values.startMonth == "") {
+        notifyError("Please choose your start month");
+        return false
+      }
+
+      if (form.values.startYear == "") {
+        notifyError("Please choose your start year");
+        return false
+      }
+
+      if (!form.values.currentlyWorking) {
+        if (form.values.endMonth == "") {
+          notifyError("Please choose your end month");
+          return false
+        }
+
+        if (form.values.endYear == "") {
+          notifyError("Please choose your end year");
+          return false
+        }
+      }
+    }
+
+    // job category validation
+    if (hasDesiredJobCategory) {
+      if (form.values.categorieWork == "") {
+        notifyError("Please choose your category of work");
+        return false
+      } else {
+        if (form.values.endYear == "") {
+          notifyError("Please choose your sub category of work");
+          return false
+        }
+      }
+    }
+
+    return true
   };
 
   const onUserConfirmEdit = async () => {
     if (validateEditData()) {
-      try {
-        const updatedUser = {
-          firstName: firstNameValue,
-          lastName: lastNameValue,
-          aboutMe: aboutMeValue,
-          address: addressValue,
-          email: emailValue,
-          contact: phoneNumberValue,
-        };
-        await updateUserProfile(updatedUser);
-        await updateJobSeekerUsername(userNameValue, password);
-        notifySuccess("Profile updated successfully");
-        // Optionally, refetch user data here
-        refetchjobseeker();
-      } catch (error) {
-        notifyError(error as string);
-      }
+      confirmPasswordToggle()
+      setConfirmPassword2("")
     }
   };
 
-  const onUserConfirmEditUsername = async () => {
-    if (password !== confirmpassword) {
-      notifyError("Passwords do not match");
-      return;
+  useEffect(() => {
+    setConfirmPassword2("")
+  }, [confirmPasswordOpened])
+
+  const onUserConfirmByPassword = async () => {
+    if (confirmPassword2 === '') {
+      setConfirmPassword2Error("Please enter your password")
+      notifyError("Please enter your password");
+      return
     }
+
     try {
-      const response = await updateJobSeekerUsername(userNameValue, password);
-      console.log("response:", response);
-      // if (response.data.error) {
-      //   notifyError(response.data.error);
-      //   return;
-      // }
-      notifySuccess("username updated successfully");
-
-      refetchjobseeker();
-      console.log("refetchjobseeker");
+      const updatedUser = {
+        firstName: form.values.firstName,
+        lastName: form.values.lastName,
+        aboutMe: form.values.aboutMe,
+        address: form.values.location,
+        email: form.values.email,
+        contact: form.values.contact,
+      };
+      // await updateUserProfile(updatedUser);
+      // await updateJobSeekerUsername(form.values.username, confirmPassword2);
+      notifySuccess("Profile updated successfully");
+      // Optionally, refetch user data here
+      // refetchjobseeker();
+      confirmPasswordToggle()
+      editProfileToggle()
     } catch (error) {
-      if (error instanceof AxiosError) {
-        notifyError((error as AxiosError).response.data.msg);
-      } else {
-        notifyError(error as string);
-      }
+      notifyError(error as string);
     }
   };
 
-  const onUserConfirmEditPassword = async () => {
-    if (password2 !== confirmpassword2) {
-      notifyError("Passwords do not match");
-      return;
-    }
-    try {
-      await updateJobSeekerPassword(newPassword, password2);
-      notifySuccess("Passwords updated successfully");
-
-      refetchjobseeker();
-      console.log("refetchjobseeker");
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        notifyError((error as AxiosError).response.data.msg);
-      } else {
-        notifyError(error as string);
-      }
-    }
+  const handleSubmit = (values: typeof form.values) => {
+    console.log("Submitted values:", values);
   };
+
+  // const onUserConfirmEditUsername = async () => {
+  //   if (password !== confirmpassword) {
+  //     notifyError("Passwords do not match");
+  //     return;
+  //   }
+  //   try {
+  //     const response = await updateJobSeekerUsername(userNameValue, password);
+  //     console.log("response:", response);
+  //     // if (response.data.error) {
+  //     //   notifyError(response.data.error);
+  //     //   return;
+  //     // }
+  //     notifySuccess("username updated successfully");
+
+  //     refetchjobseeker();
+  //     console.log("refetchjobseeker");
+  //   } catch (error) {
+  //     if (error instanceof AxiosError) {
+  //       notifyError((error as AxiosError).response.data.msg);
+  //     } else {
+  //       notifyError(error as string);
+  //     }
+  //   }
+  // };
+
+  // const onUserConfirmEditPassword = async () => {
+  //   if (password2 !== confirmpassword2) {
+  //     notifyError("Passwords do not match");
+  //     return;
+  //   }
+  //   try {
+  //     await updateJobSeekerPassword(newPassword, password2);
+  //     notifySuccess("Passwords updated successfully");
+
+  //     refetchjobseeker();
+  //     console.log("refetchjobseeker");
+  //   } catch (error) {
+  //     if (error instanceof AxiosError) {
+  //       notifyError((error as AxiosError).response.data.msg);
+  //     } else {
+  //       notifyError(error as string);
+  //     }
+  //   }
+  // };
 
   const handleDeletePost = async (postId: string) => {
     try {
@@ -241,6 +472,102 @@ function Profile() {
       console.error("Failed to delete post:", error);
     }
   };
+
+  const renderTextInput = ({ label, placeholder, inputProps, size, required = false }: InputProps) => (
+    <TextInput
+      label={label}
+      placeholder={placeholder}
+      className="font-kanit"
+      required={required}
+      styles={{
+        root: {
+          width: size === "short" ? "100px" : size === "medium" ? "180px" : "400px",
+          maxWidth: size === "short" ? "120px" : size === "medium" ? "200px" : "540px", 
+        },
+        label: { color: "#2d3748", fontWeight: 500 },
+        input: {
+          border: "1.5px solid #e2e8f0",
+          padding: "0.4rem 0.6rem",
+          borderRadius: "6px",
+          "&:focus": { borderColor: "#2E8B57" },
+        },
+      }}
+      {...inputProps}
+    />
+  );
+
+  // ฟังก์ชันสร้าง Select (เดือนและปี) → ขนาดเท่ากันสำหรับ "ตั้งแต่" และ "ถึง"
+  const renderDateGroup = ({ monthProp, yearProp, disabled = false }: SelectProps) => (
+    <Grid grow className="w-full">
+      <Grid.Col span={3}>
+        <Select
+          placeholder="เดือน"
+          data={[
+            "มกราคม",
+            "กุมภาพันธ์",
+            "มีนาคม",
+            "เมษายน",
+            "พฤษภาคม",
+            "มิถุนายน",
+            "กรกฎาคม",
+            "สิงหาคม",
+            "กันยายน",
+            "ตุลาคม",
+            "พฤศจิกายน",
+            "ธันวาคม"
+          ]}
+          disabled={disabled}
+          error={form.errors.categorieWork}
+          className="w-full"
+          styles={{
+            input: {
+              border: "1.5px solid #e2e8f0",
+              padding: "0.4rem 0.5rem",
+              borderRadius: "6px",
+            },
+          }}
+          {...monthProp}
+        />
+      </Grid.Col>
+      <Grid.Col span={3}>
+        <Select
+          placeholder="ปี"
+          data={years}
+          disabled={disabled}
+          className="w-full"
+          styles={{
+            input: {
+              border: "1.5px solid #e2e8f0",
+              padding: "0.4rem 0.5rem",
+              borderRadius: "6px",
+            },
+          }}
+          {...yearProp}
+        />
+      </Grid.Col>
+    </Grid>
+  );
+
+  const onUserSwitchHasExperience = (check: boolean) => {
+    setHasExperience(check)
+    form.setValues({
+      jobTitle: "",
+      company: "",
+      startMonth: "",
+      startYear: "",
+      endMonth: "",
+      endYear: "",
+      currentlyWorking: false,
+    })
+  }
+
+  const onUserSwitchJobCategory = (check: boolean) => {
+    setHasDesiredJobCategory(check)
+    form.setValues({
+      categorieWork: "",
+      subCategorieWork: "",
+    })
+  }
 
   return (
     <div>
@@ -420,13 +747,14 @@ function Profile() {
                 opened={editProfileOpened}
                 onClose={editProfileClose}
                 title="Edit Profile"
+                size="lg"
                 styles={{
                   title: {
                     fontWeight: "bold",
                   },
                 }}
               >
-                <TextInput
+                {/* <TextInput
                   mt="md"
                   label="username"
                   placeholder="your username"
@@ -460,9 +788,9 @@ function Profile() {
                   onClick={onUserConfirmEditUsername}
                 >
                   update username
-                </button>
+                </button> */}
 
-                <TextInput
+                {/* <TextInput
                   mt="md"
                   label="new password"
                   placeholder="your new password"
@@ -496,86 +824,273 @@ function Profile() {
                   onClick={onUserConfirmEditPassword}
                 >
                   update password
-                </button>
+                </button> */}
 
+                <form onSubmit={form.onSubmit(handleSubmit)}>
+                  <Stack gap="lg" mt="md">
+                    {/* username (ยาวมากขึ้น) */}
+                    <Grid grow>
+                      <Grid.Col span={8}>
+                        {renderTextInput({
+                          label: "username",
+                          placeholder: "กรอก username",
+                          inputProps: form.getInputProps("username"),
+                          size: "long",
+                          required: true,
+                        })}
+                      </Grid.Col>
+                    </Grid>
+
+                    {/* ชื่อและนามสกุล (ขนาดกลาง) */}
+                    <Grid grow>
+                      <Grid.Col span={4}>
+                        {renderTextInput({
+                          label: "ชื่อ",
+                          placeholder: "กรอกชื่อ",
+                          inputProps: form.getInputProps("firstName"),
+                          size: "medium",
+                          required: true,
+                        })}
+                      </Grid.Col>
+                      <Grid.Col span={8}>
+                        {renderTextInput({
+                          label: "นามสกุล",
+                          placeholder: "กรอกนามสกุล",
+                          inputProps: form.getInputProps("lastName"),
+                          size: "medium",
+                          required: true,
+                        })}
+                      </Grid.Col>
+                    </Grid>
+        
+                    {/* ที่อยู่ปัจจุบัน (ยาวมากขึ้น) */}
+                    <Grid grow>
+                      <Grid.Col span={8}>
+                        {renderTextInput({
+                          label: "ที่อยู่ปัจจุบัน",
+                          placeholder: "ระบุ เขต หรือ จังหวัด",
+                          inputProps: form.getInputProps("location"),
+                          size: "long",
+                          required: true,
+                        })}
+                      </Grid.Col>
+                    </Grid>
+
+                    {/* เกี่ยวกับฉัน (ยาวมากขึ้น) */}
+                    <Grid grow>
+                      <Grid.Col span={8}>
+                        {renderTextInput({
+                          label: "เกี่ยวกับฉัน",
+                          placeholder: "ระบุข้อความที่เกี่ยวกับตัวคุณ",
+                          inputProps: form.getInputProps("aboutMe"),
+                          size: "long",
+                          required: true,
+                        })}
+                      </Grid.Col>
+                    </Grid>
+
+                    {/* อีเมล (ยาวมากขึ้น) */}
+                    <Grid grow>
+                      <Grid.Col span={8}>
+                        {renderTextInput({
+                          label: "อีเมล",
+                          placeholder: "กรอกอีเมล",
+                          inputProps: form.getInputProps("email"),
+                          size: "long",
+                          required: true,
+                        })}
+                      </Grid.Col>
+                    </Grid>
+
+                    {/* เบอร์โทร (ยาวมากขึ้น) */}
+                    <Grid grow>
+                      <Grid.Col span={8}>
+                        {renderTextInput({
+                          label: "เบอร์โทร",
+                          placeholder: "กรอกเบอร์โทร",
+                          inputProps: form.getInputProps("contact"),
+                          size: "long",
+                          required: true,
+                        })}
+                      </Grid.Col>
+                    </Grid>
+        
+                    <div className="space-y-4 mt-6">
+                      <Title order={4} className="text-gray-800 text-lg font-semibold">
+                        ประสบการณ์ล่าสุด
+                      </Title>
+                      <Switch
+                        label="ฉันมีประสบการณ์"
+                        checked={hasExperience}
+                        onChange={(e) => onUserSwitchHasExperience(e.currentTarget.checked)}
+                        color="green"
+                        classNames={{ label: "text-gray-700 font-kanit" }}
+                      />
+                    </div>
+        
+                    {hasExperience && (
+                      <div className="space-y-4">
+                        {/* ตำแหน่งงาน และ บริษัท (ยาวมากขึ้น) */}
+                        {renderTextInput({
+                          label: "ตำแหน่งงาน",
+                          placeholder: "ระบุตำแหน่งงานของคุณ",
+                          inputProps: form.getInputProps("jobTitle"),
+                          size: "long",
+                          required: true,
+                        })}
+                        {renderTextInput({
+                          label: "บริษัท",
+                          placeholder: "ชื่อบริษัท",
+                          inputProps: form.getInputProps("company"),
+                          size: "long",
+                          required: true,
+                        })}
+        
+                        <Grid grow>
+                          <Grid.Col span={4}>
+                            <label className="text-gray-700 font-kanit font-medium text-md">
+                              ตั้งแต่
+                              <span className="m_78a94662 mantine-InputWrapper-required mantine-TextInput-required font-normal" aria-hidden="true"> *</span>
+                            </label>
+                            {renderDateGroup({
+                              monthProp: form.getInputProps("startMonth"),
+                              yearProp: form.getInputProps("startYear")
+                            })}
+                          </Grid.Col>
+                          <Grid.Col span={5} className="flex items-center">
+                              </Grid.Col>
+                        </Grid>
+        
+                        <Grid grow>
+                          <Grid.Col>
+                            <label className="text-gray-700 font-kanit font-medium text-md">
+                              ถึง
+                              <span className="m_78a94662 mantine-InputWrapper-required mantine-TextInput-required font-normal" aria-hidden="true"> *</span>
+                            </label>
+                            <Grid grow>
+                              <Grid.Col span={4}>
+                                {renderDateGroup({
+                                  monthProp: form.getInputProps("endMonth"),
+                                  yearProp: form.getInputProps("endYear"),
+                                  disabled: form.values.currentlyWorking,
+                                })}
+                              </Grid.Col>
+        
+                              <Grid.Col span={5} className="flex items-center">
+                                <Checkbox
+                                  label="ยังอยู่ในตำแหน่งงานนี้"
+                                  {...form.getInputProps("currentlyWorking", { type: "checkbox" })}
+                                  color="green"
+                                  classNames={{ label: "text-gray-700 font-kanit" }}
+                                />
+                              </Grid.Col>
+                            </Grid>
+                          </Grid.Col>
+                        </Grid>
+                      </div>
+                    )}
+
+                    <div className="space-y-4 mt-6">
+                      <Title order={4} className="text-gray-800 text-lg font-semibold">
+                        ประเภทงานที่ต้องการ
+                      </Title>
+                      <Switch
+                        label="มีประเภทงานที่ต้องการ"
+                        checked={hasDesiredJobCategory}
+                        onChange={(e) => onUserSwitchJobCategory(e.currentTarget.checked)}
+                        color="green"
+                        classNames={{ label: "text-gray-700 font-kanit" }}
+                      />
+    
+                      {hasDesiredJobCategory && (
+                        <div className="space-y-4">
+                          <Select
+                            label="เลือกประเภทงานหลัก"
+                            placeholder="เลือกประเภทงาน"
+                            data={jobCategories}
+                            className="font-kanit"
+                            required
+                            error={form.errors.categorieWork}
+                            {...form.getInputProps("categorieWork")}
+                            styles={{
+                              input: {
+                                border: "1.5px solid #e2e8f0",
+                                padding: "0.4rem 0.6rem",
+                                borderRadius: "6px",
+                                "&:focus": { borderColor: "#2E8B57" },
+                              },
+                            }}
+                          />
+    
+                          {form.values.categorieWork && (
+                            <Select
+                              label="เลือกสายงานย่อย"
+                              placeholder="เลือกสายงาน"
+                              data={subCategories[form.values.categorieWork as keyof typeof subCategories]}
+                              className="font-kanit"
+                              required
+                              error={form.errors.categorieWork}
+                              {...form.getInputProps("subCategorieWork")}
+                              styles={{
+                                input: {
+                                  border: "1.5px solid #e2e8f0",
+                                  padding: "0.4rem 0.6rem",
+                                  borderRadius: "6px",
+                                  "&:focus": { borderColor: "#2E8B57" },
+                                },
+                              }}
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-6 w-full flex justify-end">
+                      <button
+                        type="submit"
+                        className="text-base bg-green-600 text-white px-3 py-1 rounded-sm hover:bg-green-500 transition"
+                        onClick={onUserConfirmEdit}
+                      >
+                        Confirm
+                      </button>
+
+                      <button
+                        className="text-base bg-gray-500 text-white px-3 py-1 ml-2 rounded-sm hover:bg-gray-400 transition"
+                        onClick={editProfileToggle}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </Stack>
+                </form>
+              </Modal>
+
+              <Modal
+                opened={confirmPasswordOpened}
+                onClose={confirmPasswordClose}
+                title="Confirm edit with your password"
+              >
                 <TextInput
+                  type="password"
                   mt="md"
-                  label="First Name"
-                  placeholder="your first name"
+                  label="Password"
+                  placeholder="your password"
                   required
-                  error={firstNameError}
                   inputWrapperOrder={["label", "input", "error"]}
-                  value={firstNameValue}
-                  onChange={(event) => setFirstNameValue(event.target.value)}
-                />
-
-                <TextInput
-                  mt="md"
-                  label="Last Name"
-                  placeholder="your last name"
-                  required
-                  error={lastNameError}
-                  inputWrapperOrder={["label", "input", "error"]}
-                  value={lastNameValue}
-                  onChange={(event) => setLastNameValue(event.target.value)}
-                />
-
-                <TextInput
-                  mt="md"
-                  label="About Me"
-                  placeholder="your about me"
-                  error={aboutMeError}
-                  inputWrapperOrder={["label", "input", "error"]}
-                  value={aboutMeValue}
-                  onChange={(event) => setAboutMeValue(event.target.value)}
-                />
-
-                <TextInput
-                  mt="md"
-                  label="Address"
-                  placeholder="your address"
-                  required
-                  error={addressError}
-                  inputWrapperOrder={["label", "input", "error"]}
-                  value={addressValue}
-                  onChange={(event) => setAddressValue(event.target.value)}
-                />
-
-                <TextInput
-                  mt="md"
-                  label="Email"
-                  placeholder="your email"
-                  required
-                  error={""}
-                  inputWrapperOrder={["label", "input", "error"]}
-                  value={emailValue}
-                  onChange={(event) => setEmailValue(event.target.value)}
-                />
-
-                <TextInput
-                  mt="md"
-                  label="Contact"
-                  placeholder="your Contact"
-                  required
-                  error={""}
-                  inputWrapperOrder={["label", "input", "error"]}
-                  value={phoneNumberValue}
-                  onChange={(event) => setPhoneNumberValue(event.target.value)}
+                  error={confirmPassword2Error}
+                  value={confirmPassword2}
+                  autoComplete="new-password"
+                  onChange={(event) => {
+                    setConfirmPassword2(event.target.value)
+                  }}
                 />
 
                 <div className="mt-6 w-full flex justify-end">
                   <button
                     className="text-base bg-green-600 text-white px-3 py-1 rounded-sm hover:bg-green-500 transition"
-                    onClick={onUserConfirmEdit}
+                    onClick={onUserConfirmByPassword}
                   >
                     Confirm
-                  </button>
-
-                  <button
-                    className="text-base bg-gray-500 text-white px-3 py-1 ml-2 rounded-sm hover:bg-gray-400 transition"
-                    onClick={editProfileToggle}
-                  >
-                    Cancel
                   </button>
                 </div>
               </Modal>
